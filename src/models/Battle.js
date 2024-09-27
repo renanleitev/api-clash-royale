@@ -1,0 +1,21 @@
+import mongoose from "mongoose";
+
+const { Schema } = mongoose;
+
+const BattleSchema = new Schema({
+  battleTime: String,
+  player1: String,
+  player2: String,
+  player1TowersDestroyed: Number,
+  player2TowersDestroyed: Number,
+  winner: String,
+  loser: String,
+  player1Deck: [String], 
+  player2Deck: [String], 
+  player1Trophies: Number,
+  player2Trophies: Number,
+});
+
+const Battle = mongoose.model('Battle', BattleSchema);
+
+export default Battle;
