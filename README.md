@@ -39,7 +39,7 @@ Para iniciar a aplicação, execute o comando abaixo:
 
     npm start
 
-Em seguida, abra o seu navegador e vá até a rota `/player/:tag` e insira uma tag de um jogador.
+Em seguida, abra o seu navegador e vá até a rota `/player/save/:tag` e insira uma tag de um jogador.
 
 Os dados do jogador serão salvos no banco de dados e será possível visualizar um JSON.
 
