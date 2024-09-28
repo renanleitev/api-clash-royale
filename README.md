@@ -14,12 +14,14 @@ Os dados são salvos na base de dados do MongoDB.
 ## Ferramentas
 
 Back-end:
+
 - NodeJS
 - Express
 - Axios
 - Mongoose
 
 Banco de Dados:
+
 - MongoDB
 
 ## Iniciando a aplicação
@@ -27,7 +29,7 @@ Banco de Dados:
 Faça a instalação das dependências do projeto:
 
     npm i
-  
+
 Altere o nome do arquivo `.env.example` para `.env`.
 
 Dentro do arquivo `.env`, coloque a sua chave de API do Clash Royale e a URL da sua base de dados MongoDB:
