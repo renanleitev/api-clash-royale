@@ -99,4 +99,4 @@ export const playersTagList = [
   'YY9V2JCJ',
   'Q00GLLC2J',
   'QYYY00JYG'
-]
+];

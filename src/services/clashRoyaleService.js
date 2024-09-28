@@ -1,5 +1,5 @@
-import axios from 'axios'
-import 'dotenv/config'
+import axios from 'axios';
+import 'dotenv/config';
 
 export const getPlayerInfo = async (playerTag) => {
   try {
@@ -8,13 +8,13 @@ export const getPlayerInfo = async (playerTag) => {
       {
         headers: { Authorization: `Bearer ${process.env.CLASH_TOKEN_API}` }
       }
-    )
-    return response.data
+    );
+    return response.data;
   } catch (error) {
-    console.error('Erro ao buscar dados do jogador', error)
-    return null
+    console.error('Erro ao buscar dados do jogador', error);
+    return null;
   }
-}
+};
 
 export const getPlayerBattles = async (playerTag) => {
   try {
@@ -23,10 +23,10 @@ export const getPlayerBattles = async (playerTag) => {
       {
         headers: { Authorization: `Bearer ${process.env.CLASH_TOKEN_API}` }
       }
-    )
-    return response.data
+    );
+    return response.data;
   } catch (error) {
-    console.error('Erro ao buscar batalhas do jogador', error)
-    return null
+    console.error('Erro ao buscar batalhas do jogador', error);
+    return null;
   }
-}
+};

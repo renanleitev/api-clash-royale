@@ -1,6 +1,6 @@
-import mongoose from 'mongoose'
+import mongoose from 'mongoose';
 
-const { Schema } = mongoose
+const { Schema } = mongoose;
 
 const PlayerSchema = new Schema({
   nickname: String,
@@ -10,8 +10,8 @@ const PlayerSchema = new Schema({
   wins: Number,
   losses: Number,
   clan: String
-})
+});
 
-const Player = mongoose.model('Player', PlayerSchema)
+const Player = mongoose.model('Player', PlayerSchema);
 
-export default Player
+export default Player;
