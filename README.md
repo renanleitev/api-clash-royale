@@ -79,11 +79,13 @@ Calcule a quantidade de derrotas utilizando o combo de cartas (X1,X2, ...) (par�
 
     GET /battles/defeats-by-card-combo?cardCombo=Knight,Skeletons&startTime=2024-01-01T00:00:00Z&endTime=2024-09-30T23:59:59Z
 
-Calcule a quantidade de vitórias envolvendo a carta X (parâmetro) nos casos em que o vencedor possui Z% (parâmetro) menos troféus do que o perdedor, a partida durou menos de 2 minutos, e o perdedor derrubou ao menos duas torres do adversário.
+Calcule a quantidade de vitórias envolvendo a carta X (parâmetro) nos casos em que o vencedor possui Z% (parâmetro) menos troféus do que o perdedor e o perdedor derrubou ao menos duas torres do adversário.
 
     GET /battles/wins-by-card-and-trophies?card=Knight&trophyPercentage=0&startTime=2024-01-01T00:00:00Z&endTime=2024-09-30T23:59:59Z
 
-TODO: Liste o combo de cartas (eg: carta 1, carta 2, carta 3... carta n) de tamanho N (parâmetro) que produziram mais de Y% (parâmetro) de vitórias ocorridas em um intervalo de timestamps (parâmetro).
+Liste o combo de cartas (eg: carta 1, carta 2, carta 3... carta n) de tamanho N (parâmetro) que produziram mais de Y% (parâmetro) de vitórias ocorridas em um intervalo de timestamps (parâmetro).
+
+    GET /battles/combos-wins-percentage?deckQuantity=8&winPercentage=10&startTime=2024-08-01T00:00:00Z&endTime=2024-09-30T23:59:59Z
 
 # Lista de jogadores
 
