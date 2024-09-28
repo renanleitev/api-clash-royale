@@ -45,6 +45,8 @@ Os dados do jogador serão salvos no banco de dados e será possível visualizar
 
 ## Rotas
 
+### Player
+
 Buscar os dados de um jogador e salvar no banco de dados:
 
     GET /player/save/:tag
@@ -57,13 +59,39 @@ Obter o histórico de batalha do jogador:
 
     GET /player/battles/:nickname
 
+Salvar os dados de múltiplos jogadores, dada uma lista:
+
+    GET /player/save-all-players
+
+OBS: Dependendo do tamanho da lista, pode demorar até 5 minutos para popular a base de dados
+
+### Battles
+
+Calcule a porcentagem de vitórias e derrotas utilizando a carta X (parâmetro) ocorridas em um intervalo de timestamps (parâmetro).
+
+    GET /battles/win-loss-percentage?card=Knight&startTime=2024-01-01T00:00:00Z&endTime=2024-09-30T23:59:59Z
+
+Liste os decks completos que produziram mais de X% (parâmetro) de vitórias ocorridas em um intervalo de timestamps (parâmetro).
+
+    GET /battles/decks-win-percentage?winPercentage=10&startTime=2024-01-01T00:00:00Z&endTime=2024-09-30T23:59:59Z
+
+Calcule a quantidade de derrotas utilizando o combo de cartas (X1,X2, ...) (parâmetro) ocorridas em um intervalo de timestamps (parâmetro).
+
+    GET /battles/defeats-by-card-combo?cardCombo=Knight,Skeletons&startTime=2024-01-01T00:00:00Z&endTime=2024-09-30T23:59:59Z
+
+Calcule a quantidade de vitórias envolvendo a carta X (parâmetro) nos casos em que o vencedor possui Z% (parâmetro) menos troféus do que o perdedor, a partida durou menos de 2 minutos, e o perdedor derrubou ao menos duas torres do adversário.
+
+    GET /battles/wins-by-card-and-trophies?card=Knight&trophyPercentage=0&startTime=2024-01-01T00:00:00Z&endTime=2024-09-30T23:59:59Z
+
+TODO: Liste o combo de cartas (eg: carta 1, carta 2, carta 3... carta n) de tamanho N (parâmetro) que produziram mais de Y% (parâmetro) de vitórias ocorridas em um intervalo de timestamps (parâmetro).
+
 # Lista de jogadores
 
-Use a lista de tags no arquivo `playersTagList.txt` para inserir alguns jogadores
+Usar a rota `/player/save-all-players` para inserir todos os jogadores automaticamente
 
-Ou então, usar a lista disponível no site do [Clash Royale API](https://royaleapi.com/player/search/results?lang=en&q=%28Tag&fwd=1)
+Se necessário, usar a lista de tags no arquivo `/src/config/playersTagList.js` para inserir manualmente alguns jogadores
 
-OBS: Inserir os IDs sem # (apenas o ID)
+Ou então, usar a lista disponível no site do [Clash Royale API](https://royaleapi.com/player/search/results?lang=en&q=%28Tag&fwd=1) para inserir manualmente alguns jogadores
 
 ## Equipe
 
