@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 const BattleSchema = new Schema({
-  battleTime: String,
+  battleTime: Date,
   player1: String,
   player2: String,
   player1TowersDestroyed: Number,
