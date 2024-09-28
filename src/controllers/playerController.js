@@ -41,8 +41,8 @@ const saveBattleData = async (battleData) => {
     player2TowersDestroyed: battleData.opponent[0].crowns,
     winner: battleData.team[0].crowns > battleData.opponent[0].crowns ? 'player1' : 'player2',
     loser: battleData.team[0].crowns < battleData.opponent[0].crowns ? 'player1' : 'player2',
-    player1Deck: battleData.team[0].cards.map(card => card.name),
-    player2Deck: battleData.opponent[0].cards.map(card => card.name),
+    player1Deck: battleData.team[0].cards.map(card => {return { name: card.name, imageURL: card.iconUrls.medium }}),
+    player2Deck: battleData.opponent[0].cards.map(card => {return { name: card.name, imageURL: card.iconUrls.medium }}),
     player1Trophies: battleData.team[0].startingTrophies,
     player2Trophies: battleData.opponent[0].startingTrophies,
   });

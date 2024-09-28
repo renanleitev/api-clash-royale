@@ -10,8 +10,14 @@ const BattleSchema = new Schema({
   player2TowersDestroyed: Number,
   winner: String,
   loser: String,
-  player1Deck: [String], 
-  player2Deck: [String], 
+  player1Deck: [{
+    name: String, 
+    imageURL: String,
+  }], 
+  player2Deck: [{
+    name: String, 
+    imageURL: String,
+  }],
   player1Trophies: Number,
   player2Trophies: Number,
 });
