@@ -149,27 +149,27 @@ router.get('/decks-win-percentage', async (req, res) => {
           _id: {
             $map: { input: '$decks.deck', as: 'card', in: '$$card.name' }
           }, // Agrupa pelos nomes dos cards
+          details: { $push: '$decks.deck' }, // Armazena os detalhes do deck
           played: { $sum: 1 }, // Conta quantas vezes o deck foi usado
-          won: { $sum: { $cond: ['$decks.winner', 1, 0] } }, // Conta quantas vezes o deck venceu
-          details: { $push: '$decks.deck' } // Armazena os detalhes do deck
+          won: { $sum: { $cond: ['$decks.winner', 1, 0] } } // Conta quantas vezes o deck venceu
         }
       },
       {
         // Calcula a porcentagem de vitórias para cada deck
         $project: {
           deck: '$_id',
-          played: 1,
-          won: 1,
-          winPercentage: {
-            $multiply: [{ $divide: ['$won', '$played'] }, 100] // Calcula a % de vitórias
-          },
           details: {
             $reduce: {
               input: '$details',
               initialValue: [],
               in: { $setUnion: ['$$value', '$$this'] } // Remove decks duplicados
             }
-          }
+          },
+          winPercentage: {
+            $multiply: [{ $divide: ['$won', '$played'] }, 100] // Calcula a % de vitórias
+          },
+          played: 1,
+          won: 1
         }
       },
       {
@@ -185,20 +185,21 @@ router.get('/decks-win-percentage', async (req, res) => {
               }
             }
           },
+          winPercentage: 1,
           played: 1,
-          won: 1,
-          winPercentage: 1
+          won: 1
         }
       },
       {
         // Obtendo apenas nomes e imagens únicos
         $project: {
+          _id: 0,
           deck: {
             $setUnion: '$resultDeck'
           },
+          winPercentage: 1,
           played: 1,
-          won: 1,
-          winPercentage: 1
+          won: 1
         }
       },
       {
@@ -246,13 +247,15 @@ router.get('/defeats-by-card-combo', async (req, res) => {
   const combo = cardCombo.split(',').map((card) => card.trim());
 
   // Obtendo a imagem dos cards
-  const deckImages = await Promise.all(combo.map(async card => await findCardImage(card)));
+  const deckImages = await Promise.all(
+    combo.map(async (card) => await findCardImage(card))
+  );
 
   const deck = combo.map((card, index) => {
     return {
       name: card,
-      imageURL: deckImages[index],
-    }
+      imageURL: deckImages[index]
+    };
   });
 
   try {
@@ -266,19 +269,19 @@ router.get('/defeats-by-card-combo', async (req, res) => {
         $match: {
           $or: [
             { 'player1Deck.name': { $all: combo } }, // Verifica se o combo está no deck do player1
-            { 'player2Deck.name': { $all: combo } }  // Verifica se o combo está no deck do player2
+            { 'player2Deck.name': { $all: combo } } // Verifica se o combo está no deck do player2
           ]
         }
       },
       {
         $match: {
           $expr: {
-            $eq: ["$winner", "player2"] // Considerando que se a condição for verdadeira, o player1 perdeu e o player2 venceu
+            $eq: ['$winner', 'player2'] // Considerando que se a condição for verdadeira, o player1 perdeu e o player2 venceu
           }
         }
       },
       {
-        $count: "defeats" // Conta as derrotas
+        $count: 'defeats' // Conta as derrotas
       }
     ]);
 
@@ -314,7 +317,7 @@ router.get('/wins-by-card-and-trophies', async (req, res) => {
           battleTime: { $gte: startDate, $lte: endDate },
           $or: [
             { player1Deck: { $elemMatch: { name: card } } }, // Verifica se a carta está no deck do player1
-            { player2Deck: { $elemMatch: { name: card } } }  // Verifica se a carta está no deck do player2
+            { player2Deck: { $elemMatch: { name: card } } } // Verifica se a carta está no deck do player2
           ]
         }
       },
@@ -322,10 +325,20 @@ router.get('/wins-by-card-and-trophies', async (req, res) => {
         $match: {
           $expr: {
             $and: [
-              { $gte: ["$player1Trophies", { $multiply: ["$player2Trophies", 1 - trophyThreshold] }] }, // Vencedor (player1) tem Z% menos troféus que o perdedor
-              { $gte: ["$player2Trophies", { $multiply: ["$player1Trophies", 1 - trophyThreshold] }] }, // Vencedor (player2) tem Z% menos troféus que o perdedor
-              { $gte: ["$player1TowersDestroyed", 2] }, // O perdedor (player2) derrubou pelo menos duas torres
-              { $gte: ["$player2TowersDestroyed", 2] }  // O perdedor (player1) derrubou pelo menos duas torres
+              {
+                $gte: [
+                  '$player1Trophies',
+                  { $multiply: ['$player2Trophies', 1 - trophyThreshold] }
+                ]
+              }, // Vencedor (player1) tem Z% menos troféus que o perdedor
+              {
+                $gte: [
+                  '$player2Trophies',
+                  { $multiply: ['$player1Trophies', 1 - trophyThreshold] }
+                ]
+              }, // Vencedor (player2) tem Z% menos troféus que o perdedor
+              { $gte: ['$player1TowersDestroyed', 2] }, // O perdedor (player2) derrubou pelo menos duas torres
+              { $gte: ['$player2TowersDestroyed', 2] } // O perdedor (player1) derrubou pelo menos duas torres
             ]
           }
         }
@@ -333,7 +346,9 @@ router.get('/wins-by-card-and-trophies', async (req, res) => {
       {
         $group: {
           _id: null, // Agrupamos tudo em um único documento
-          victories: { $sum: { $cond: [{ $eq: ["$winner", "player1"] }, 1, 0] } } // Conta vitórias do player1
+          victories: {
+            $sum: { $cond: [{ $eq: ['$winner', 'player1'] }, 1, 0] }
+          } // Conta vitórias do player1
         }
       }
     ]);
@@ -348,87 +363,117 @@ router.get('/wins-by-card-and-trophies', async (req, res) => {
 
 // Rota para listar combos de cartas que produziram mais de Y% de vitórias
 router.get('/combos-wins-percentage', async (req, res) => {
-  const { deckQuantity, winPercentage, startTime, endTime } = req.query;
+  const { deckSize, winPercentage, startTime, endTime } = req.query;
 
   // Verificação de parâmetros
-  if (!deckQuantity || !winPercentage || !startTime || !endTime) {
+  if (!deckSize || !winPercentage || !startTime || !endTime) {
     return res.status(400).json({
       message:
-        'Parâmetros deckQuantity, winPercentage, startTime e endTime são necessários!'
+        'Parâmetros deckSize, winPercentage, startTime e endTime são necessários!'
     });
   }
 
   try {
-    const deckLimit = Number.parseInt(deckQuantity);
-    const winThreshold = Number.parseFloat(winPercentage);
-    const startDate = new Date(startTime);
-    const endDate = new Date(endTime);
+    const size = Number.parseInt(deckSize); // Convertendo para inteiro a fim de fazer o slice
+    const winThreshold = Number.parseFloat(winPercentage); // Converte a porcentagem em fração
+    const startDate = new Date(startTime); // Data de início
+    const endDate = new Date(endTime); // Data de fim
 
-    // Busca todas as batalhas no intervalo de timestamps
-    const battles = await Battle.find({
-      battleTime: { $gte: startDate, $lte: endDate }
-    });
-
-    // Onde serão armazenados os decks e as estatísticas de jogadas e vitórias
-    let deckStats = {};
-
-    // Filtrando os decks pela quantidade de cards desejada por deck
-    const battlesFiltered = battles.filter(
-      (battle) =>
-        battle.player1Deck.length === deckLimit ||
-        battle.player2Deck.length === deckLimit
-    );
-
-    // Processa cada batalha
-    battlesFiltered.forEach((battle) => {
-      // Identifica os decks usados
-      const player1Deck = battle.player1Deck;
-      const player2Deck = battle.player2Deck;
-
-      // Chave única para os decks vencedores e não vencedores
-      const player1DeckKey = player1Deck.map((card) => card.name).join(', ');
-      const player2DeckKey = player2Deck.map((card) => card.name).join(', ');
-
-      // Inicializa as estatísticas para o player1Deck se não estiver no objeto
-      if (!deckStats[player1DeckKey]) {
-        deckStats[player1DeckKey] = { played: 0, won: 0, details: player1Deck };
+    const result = await Battle.aggregate([
+      {
+        $match: {
+          battleTime: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $project: {
+          battleTime: 1,
+          winner: 1,
+          // OBS: Foi necessário substituir $slice por $filter baseado em índices,
+          // pois o slice retornava elementos menores que o número de cards desejado
+          player1Combo: {
+            $filter: {
+              input: '$player1Deck',
+              as: 'card',
+              cond: {
+                $lt: [{ $indexOfArray: ['$player1Deck', '$$card'] }, size]
+              } // Retorna apenas os primeiros 'size' elementos
+            }
+          },
+          player2Combo: {
+            $filter: {
+              input: '$player2Deck',
+              as: 'card',
+              cond: {
+                $lt: [{ $indexOfArray: ['$player2Deck', '$$card'] }, size]
+              } // Retorna apenas os primeiros 'size' elementos
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          battleTime: 1,
+          winner: 1,
+          combo: {
+            $cond: [
+              { $eq: ['$winner', 'player1'] },
+              {
+                $map: {
+                  input: '$player1Combo',
+                  as: 'card',
+                  in: { name: '$$card.name', image: '$$card.imageURL' }
+                }
+              }, // Se player1 venceu, usa deck do player1
+              {
+                $map: {
+                  input: '$player2Combo',
+                  as: 'card',
+                  in: { name: '$$card.name', image: '$$card.imageURL' }
+                }
+              } // Se player2 venceu, usa deck do player2
+            ]
+          }
+        }
+      },
+      {
+        $group: {
+          _id: { combo: '$combo' }, // Agrupa pelo combo de cartas
+          victories: {
+            $sum: {
+              $cond: [{ $eq: ['$winner', 'player1'] }, 1, 0] // Conta vitórias do player1
+            }
+          },
+          total: { $sum: 1 } // Conta quantas vezes o combo foi jogado
+        }
+      },
+      {
+        $project: {
+          // Removendo o campo _id do resultado final
+          _id: 0,
+          // Obtendo o deck
+          deck: '$_id.combo',
+          // Primeiro, divide o número de vitórias pelo total (victories/total)
+          // Depois, multipla por 100 para transformar em porcentagem
+          winPercentage: {
+            $multiply: [{ $divide: ['$victories', '$total'] }, 100]
+          }, // Calcula o percentual de vitórias
+          victories: 1,
+          total: 1
+        }
+      },
+      {
+        $match: {
+          winPercentage: { $gte: winThreshold } // Filtra combos com % de vitórias maior que o threshold
+        }
+      },
+      {
+        $sort: { winPercentage: 1 } // Ordena os resultados por % de vitórias em ordem decrescente
       }
-
-      // Inicializa as estatísticas para o player2Deck se não estiver no objeto
-      if (!deckStats[player2DeckKey]) {
-        deckStats[player2DeckKey] = { played: 0, won: 0, details: player2Deck };
-      }
-
-      // Incrementa a contagem de vezes que os decks foram usados
-      deckStats[player1DeckKey].played += 1;
-      deckStats[player2DeckKey].played += 1;
-
-      // Incrementa a contagem de vitórias apenas para o deck vencedor
-      if (battle.winner === 'player1') {
-        deckStats[player1DeckKey].won += 1;
-      } else {
-        deckStats[player2DeckKey].won += 1;
-      }
-    });
-
-    // Calcula as porcentagens de vitória para cada deck
-    const result = Object.keys(deckStats)
-      .map((deckKey) => {
-        const played = deckStats[deckKey].played;
-        const won = deckStats[deckKey].won;
-        const winPercentage = (won / played) * 100;
-
-        return {
-          deck: deckStats[deckKey].details, // Detalhes do deck
-          played,
-          won,
-          winPercentage
-        };
-      })
-      .filter((item) => item.winPercentage >= winThreshold); // Filtra decks com % de vitória
+    ]);
 
     // Retornar o resultado
-    res.json({ result });
+    res.json({ ...result });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: `Erro ao buscar combos: ${error}` });

@@ -108,7 +108,7 @@ Calcule a quantidade de vitórias envolvendo a carta X (parâmetro) nos casos em
 
 Liste o combo de cartas (eg: carta 1, carta 2, carta 3... carta n) de tamanho N (parâmetro) que produziram mais de Y% (parâmetro) de vitórias ocorridas em um intervalo de timestamps (parâmetro).
 
-    GET /battles/combos-wins-percentage?deckQuantity=8&winPercentage=10&startTime=2024-08-01T00:00:00Z&endTime=2024-09-30T23:59:59Z
+    GET /battles/combos-wins-percentage?deckSize=8&winPercentage=80&startTime=2024-08-01T00:00:00Z&endTime=2024-09-30T23:59:59Z
 
 ## Lista de jogadores
 
