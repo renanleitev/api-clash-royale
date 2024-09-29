@@ -9,7 +9,7 @@ const app = express();
 connectDB();
 
 // Usa as rotas
-app.use('/player', playerRoutes);
+app.use('/players', playerRoutes);
 app.use('/battles', battleRoutes);
 
 // Inicia o servidor

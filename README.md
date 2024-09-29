@@ -47,23 +47,39 @@ Os dados do jogador serão salvos no banco de dados e será possível visualizar
 
 ## Rotas
 
-### Player
+### Players
 
-Buscar os dados de um jogador e salvar no banco de dados:
+Obter os dados de todos os jogadores:
 
-    GET /player/save/:tag
+    GET /players/profile/all-players
+
+Obter o número de jogadores cadastrados:
+
+    GET /players/profile/all-players/count
 
 Obter os dados do perfil do jogador:
 
-    GET /player/profile/:nickname
+    GET /players/profile/:nickname
+
+Obter os dados de todas as batalhas:
+
+    GET /players/battles/all-battles
+
+Obter o número de batalhas cadastradas:
+
+    GET /players/battles/all-battles/count
 
 Obter o histórico de batalha do jogador:
 
-    GET /player/battles/:nickname
+    GET /players/battles/:nickname
+
+Salvar dados de um jogador no banco de dados:
+
+    GET /players/save/:tag
 
 Salvar os dados de múltiplos jogadores, dada uma lista:
 
-    GET /player/save-all-players
+    GET /players/save-all-players
 
 OBS: Dependendo do tamanho da lista, pode demorar até 5 minutos para popular a base de dados
 
@@ -89,9 +105,9 @@ Liste o combo de cartas (eg: carta 1, carta 2, carta 3... carta n) de tamanho N 
 
     GET /battles/combos-wins-percentage?deckQuantity=8&winPercentage=10&startTime=2024-08-01T00:00:00Z&endTime=2024-09-30T23:59:59Z
 
-# Lista de jogadores
+## Lista de jogadores
 
-Usar a rota `/player/save-all-players` para inserir todos os jogadores automaticamente
+Usar a rota `/players/save-all-players` para inserir todos os jogadores automaticamente
 
 Se necessário, usar a lista de tags no arquivo `/src/config/playersTagList.js` para inserir manualmente alguns jogadores
 
