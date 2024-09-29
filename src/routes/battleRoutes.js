@@ -301,38 +301,46 @@ router.get('/wins-by-card-and-trophies', async (req, res) => {
   }
 
   // Converter a porcentagem para um número decimal
-  const trophyThreshold = 1 - trophyPercentage / 100; // Z% menos troféus
+  const trophyThreshold = Number.parseFloat(trophyPercentage) / 100;
 
   try {
     // Converter as datas para objetos Date do JavaScript
     const startDate = new Date(startTime);
     const endDate = new Date(endTime);
 
-    // Contar vitórias com as condições especificadas
-    const winsCount = await Battle.find({
-      battleTime: {
-        $gte: startDate,
-        $lte: endDate
+    const result = await Battle.aggregate([
+      {
+        $match: {
+          battleTime: { $gte: startDate, $lte: endDate },
+          $or: [
+            { player1Deck: { $elemMatch: { name: card } } }, // Verifica se a carta está no deck do player1
+            { player2Deck: { $elemMatch: { name: card } } }  // Verifica se a carta está no deck do player2
+          ]
+        }
       },
-      winner: 'player1', // Verifica se player1 é o vencedor
-      player2TowersDestroyed: { $gte: 2 }, // Player2 derrubou pelo menos 2 torres
-      $or: [
-        { 'player1Deck.name': card }, // Verifica se a carta está no deck do vencedor (player1)
-        { 'player2Deck.name': card } // Verifica se a carta está no deck do perdedor (player2)
-      ]
-    });
-
-    // Verificar se o vencedor possui Z% menos troféus do que o perdedor
-    const validWins = winsCount.filter((battle) => {
-      const player1Trophies = battle.player1Trophies;
-      const player2Trophies = battle.player2Trophies;
-
-      return player1Trophies < player2Trophies * trophyThreshold;
-    });
+      {
+        $match: {
+          $expr: {
+            $and: [
+              { $gte: ["$player1Trophies", { $multiply: ["$player2Trophies", 1 - trophyThreshold] }] }, // Vencedor (player1) tem Z% menos troféus que o perdedor
+              { $gte: ["$player2Trophies", { $multiply: ["$player1Trophies", 1 - trophyThreshold] }] }, // Vencedor (player2) tem Z% menos troféus que o perdedor
+              { $gte: ["$player1TowersDestroyed", 2] }, // O perdedor (player2) derrubou pelo menos duas torres
+              { $gte: ["$player2TowersDestroyed", 2] }  // O perdedor (player1) derrubou pelo menos duas torres
+            ]
+          }
+        }
+      },
+      {
+        $group: {
+          _id: null, // Agrupamos tudo em um único documento
+          victories: { $sum: { $cond: [{ $eq: ["$winner", "player1"] }, 1, 0] } } // Conta vitórias do player1
+        }
+      }
+    ]);
 
     const cardImage = await findCardImage(card);
 
-    res.json({ card, cardImage, winsCount: validWins.length });
+    res.json({ card, cardImage, ...result[0] });
   } catch (err) {
     res.status(500).json({ message: `Erro ao calcular vitórias: ${err}` });
   }
