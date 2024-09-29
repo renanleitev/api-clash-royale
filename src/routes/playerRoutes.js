@@ -64,7 +64,7 @@ router.get('/profile/all-players/count', async (req, res) => {
       return res.status(404).json({ message: 'Não há jogadores cadastrados!' });
     }
 
-    res.json({ playersNumbers: players }); // Envia os dados do jogador como resposta
+    res.json({ playersNumber: players }); // Envia os dados do jogador como resposta
   } catch (err) {
     res.status(500).json({ message: `Erro ao buscar jogadores: ${err}` });
   }
