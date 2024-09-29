@@ -100,7 +100,7 @@ Liste os decks completos que produziram mais de X% (parâmetro) de vitórias oco
 
 Calcule a quantidade de derrotas utilizando o combo de cartas (X1,X2, ...) (parâmetro) ocorridas em um intervalo de timestamps (parâmetro).
 
-    GET /battles/defeats-by-card-combo?cardCombo=Knight,Skeletons&startTime=2024-01-01T00:00:00Z&endTime=2024-09-30T23:59:59Z
+    GET /battles/defeats-by-card-combo?cardCombo=Mega%20Knight,The%20Log,Fire%20Spirit,Electro%20Spirit&startTime=2024-01-01T00:00:00Z&endTime=2024-09-30T23:59:59Z
 
 Calcule a quantidade de vitórias envolvendo a carta X (parâmetro) nos casos em que o vencedor possui Z% (parâmetro) menos troféus do que o perdedor e o perdedor derrubou ao menos duas torres do adversário.
 
