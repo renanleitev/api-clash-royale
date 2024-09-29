@@ -47,15 +47,20 @@ Os dados do jogador serão salvos no banco de dados e será possível visualizar
 
 ## Rotas
 
+As rotas são divididas nos seguintes grupos:
+
+- Players: Informações gerais sobre os jogadores e as batalhas
+- Battles: Consultas (queries) específicas sobre as batalhas
+
 ### Players
 
 Obter os dados de todos os jogadores:
 
     GET /players/profile/all-players
 
-Obter o número de jogadores cadastrados:
+Obter informações gerais sobre os jogadores cadastrados:
 
-    GET /players/profile/all-players/count
+    GET /players/profile/all-players/status
 
 Obter os dados do perfil do jogador:
 
@@ -65,9 +70,9 @@ Obter os dados de todas as batalhas:
 
     GET /players/battles/all-battles
 
-Obter o número de batalhas cadastradas:
+Obter informações gerais sobre as batalhas cadastradas:
 
-    GET /players/battles/all-battles/count
+    GET /players/battles/all-battles/status
 
 Obter o histórico de batalha do jogador:
 

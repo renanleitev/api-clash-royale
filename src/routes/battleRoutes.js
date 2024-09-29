@@ -1,8 +1,10 @@
 import express from 'express';
 import Battle from '../models/Battle.js';
 
+/** Battles: Consultas específicas sobre as batalhas */
 const router = express.Router();
 
+/** Função para obter a imagem do card */
 const findCardImage = async (card) => {
   // Obtendo a imagem do card
   const battle = await Battle.findOne({
@@ -98,44 +100,117 @@ router.get('/decks-win-percentage', async (req, res) => {
     // Converter as datas para objetos Date do JavaScript
     const startDate = new Date(startTime);
     const endDate = new Date(endTime);
+    const winThreshold = Number.parseFloat(winPercentage);
 
-    // Usando aggregate para calcular vitórias por deck
+    // Consulta de agregação no MongoDB
     const result = await Battle.aggregate([
       {
+        // Filtra as batalhas dentro do intervalo de tempo fornecido
         $match: {
-          battleTime: {
-            $gte: startDate,
-            $lte: endDate
+          battleTime: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        // Desestrutura os decks dos dois jogadores e marca o vencedor
+        $facet: {
+          player1Stats: [
+            {
+              $project: {
+                deck: '$player1Deck',
+                winner: { $eq: ['$winner', 'player1'] } // Verifica se player1 venceu
+              }
+            }
+          ],
+          player2Stats: [
+            {
+              $project: {
+                deck: '$player2Deck',
+                winner: { $eq: ['$winner', 'player2'] } // Verifica se player2 venceu
+              }
+            }
+          ]
+        }
+      },
+      {
+        // Combina os decks dos dois jogadores em um único array
+        $project: {
+          decks: {
+            $concatArrays: ['$player1Stats', '$player2Stats']
           }
         }
       },
       {
+        // Desestrutura o array de decks para processar cada deck individualmente
+        $unwind: '$decks'
+      },
+      {
+        // Agrupa os decks
         $group: {
-          _id: null, // Para contar todas as vitórias em geral
-          totalBattles: { $sum: 1 }, // Total de batalhas
-          wins: {
-            $sum: {
-              $cond: [
-                { $eq: ['$winner', 'player1'] }, // Conta vitórias do player1
-                1,
-                0
-              ]
+          _id: {
+            $map: { input: '$decks.deck', as: 'card', in: '$$card.name' }
+          }, // Agrupa pelos nomes dos cards
+          played: { $sum: 1 }, // Conta quantas vezes o deck foi usado
+          won: { $sum: { $cond: ['$decks.winner', 1, 0] } }, // Conta quantas vezes o deck venceu
+          details: { $push: '$decks.deck' } // Armazena os detalhes do deck
+        }
+      },
+      {
+        // Calcula a porcentagem de vitórias para cada deck
+        $project: {
+          deck: '$_id',
+          played: 1,
+          won: 1,
+          winPercentage: {
+            $multiply: [{ $divide: ['$won', '$played'] }, 100] // Calcula a % de vitórias
+          },
+          details: {
+            $reduce: {
+              input: '$details',
+              initialValue: [],
+              in: { $setUnion: ['$$value', '$$this'] } // Remove decks duplicados
+            }
+          }
+        }
+      },
+      {
+        // Substitui a lista de nomes dos cards por um array de objetos contendo nome e imagem
+        $project: {
+          resultDeck: {
+            $map: {
+              input: '$details',
+              as: 'card',
+              in: {
+                name: '$$card.name', // Pega o nome do card
+                imageURL: '$$card.imageURL' // Pega a imagem do card
+              }
             }
           },
-          player1Deck: { $first: '$player1Deck' }, // Captura o deck do player1
-          player2Deck: { $first: '$player2Deck' } // Captura o deck do player2
+          played: 1,
+          won: 1,
+          winPercentage: 1
         }
       },
       {
+        // Obtendo apenas nomes e imagens únicos
         $project: {
-          winRate: { $divide: ['$wins', '$totalBattles'] }, // Calcula a taxa de vitórias
-          player1Deck: 1,
-          player2Deck: 1
+          deck: {
+            $setUnion: '$resultDeck'
+          },
+          played: 1,
+          won: 1,
+          winPercentage: 1
         }
       },
       {
+        // Filtra os decks que têm uma porcentagem de vitória maior ou igual que o limite
         $match: {
-          winRate: { $gt: winPercentage / 100 } // Filtra decks com taxa de vitórias maior que o limite
+          winPercentage: { $gte: winThreshold }
+        }
+      },
+      // Ordenando por ordem crescente
+      {
+        $sort: {
+          winPercentage: 1
         }
       }
     ]);
@@ -143,18 +218,11 @@ router.get('/decks-win-percentage', async (req, res) => {
     if (!result.length) {
       return res.status(404).json({
         message:
-          'Nenhum deck encontrado com mais de essa porcentagem de vitórias no intervalo especificado.'
+          'Nenhum deck encontrado com essa porcentagem de vitórias ou superior no intervalo especificado.'
       });
     }
 
-    // Formatar a resposta
-    const decks = result.map((battle) => ({
-      player1Deck: battle.player1Deck,
-      player2Deck: battle.player2Deck,
-      winRate: battle.winRate * 100 // Convertendo para porcentagem
-    }));
-
-    res.json(decks);
+    res.json({ ...result });
   } catch (err) {
     res.status(500).json({ message: `Erro ao calcular porcentagens: ${err}` });
   }
