@@ -239,39 +239,50 @@ router.get('/defeats-by-card-combo', async (req, res) => {
     });
   }
 
+  const startDate = new Date(startTime);
+  const endDate = new Date(endTime);
+
   // Converter o combo de cartas em um array
-  const comboArray = cardCombo.split(',').map((card) => card.trim());
+  const combo = cardCombo.split(',').map((card) => card.trim());
+
+  // Obtendo a imagem dos cards
+  const deckImages = await Promise.all(combo.map(async card => await findCardImage(card)));
+
+  const deck = combo.map((card, index) => {
+    return {
+      name: card,
+      imageURL: deckImages[index],
+    }
+  });
 
   try {
-    // Converter as datas para objetos Date do JavaScript
-    const startDate = new Date(startTime);
-    const endDate = new Date(endTime);
-
-    // Contar derrotas onde o combo de cartas foi utilizado
-    const defeatsCount = await Battle.countDocuments({
-      battleTime: {
-        $gte: startDate,
-        $lte: endDate
+    const result = await Battle.aggregate([
+      {
+        $match: {
+          battleTime: { $gte: startDate, $lte: endDate }
+        }
       },
-      winner: 'player2',
-      $or: [
-        { 'player1Deck.name': { $all: comboArray } }, // Verifica se o combo está no deck do player1
-        { 'player2Deck.name': { $all: comboArray } } // Verifica se o combo está no deck do player2
-      ]
-    });
+      {
+        $match: {
+          $or: [
+            { 'player1Deck.name': { $all: combo } }, // Verifica se o combo está no deck do player1
+            { 'player2Deck.name': { $all: combo } }  // Verifica se o combo está no deck do player2
+          ]
+        }
+      },
+      {
+        $match: {
+          $expr: {
+            $eq: ["$winner", "player2"] // Considerando que se a condição for verdadeira, o player1 perdeu e o player2 venceu
+          }
+        }
+      },
+      {
+        $count: "defeats" // Conta as derrotas
+      }
+    ]);
 
-    const cardImages = await Promise.all(
-      comboArray.map(async (card) => await findCardImage(card))
-    );
-
-    const deck = comboArray.map((card, index) => {
-      return {
-        name: card,
-        imageURL: cardImages[index]
-      };
-    });
-
-    res.json({ deck, defeatsCount });
+    res.json({ deck, ...result[0] });
   } catch (err) {
     res.status(500).json({ message: `Erro ao calcular derrotas: ${err}` });
   }

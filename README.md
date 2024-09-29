@@ -96,7 +96,7 @@ Calcule a porcentagem de vitórias e derrotas utilizando a carta X (parâmetro) 
 
 Liste os decks completos que produziram mais de X% (parâmetro) de vitórias ocorridas em um intervalo de timestamps (parâmetro).
 
-    GET /battles/decks-win-percentage?winPercentage=10&startTime=2024-01-01T00:00:00Z&endTime=2024-09-30T23:59:59Z
+    GET /battles/decks-win-percentage?winPercentage=60&startTime=2024-01-01T00:00:00Z&endTime=2024-09-30T23:59:59Z
 
 Calcule a quantidade de derrotas utilizando o combo de cartas (X1,X2, ...) (parâmetro) ocorridas em um intervalo de timestamps (parâmetro).
 
