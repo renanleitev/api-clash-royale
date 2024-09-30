@@ -36,49 +36,87 @@ router.get('/win-loss-percentage', async (req, res) => {
     const startDate = new Date(startTime);
     const endDate = new Date(endTime);
 
-    // Busca todas as batalhas que ocorreram dentro do intervalo de tempo e onde a carta foi usada
-    const totalBattles = await Battle.countDocuments({
-      battleTime: { $gte: startDate, $lte: endDate },
-      $or: [
-        { 'player1Deck.name': card }, // Verifica se a carta está no deck do player1
-        { 'player2Deck.name': card } // Verifica se a carta está no deck do player2
-      ]
-    });
+    const result = await Battle.aggregate([
+      {
+        // Filtrando pelo período e pelo nome do card (se está no deck do player1 ou do player2)
+        $match: {
+          battleTime: { $gte: startDate, $lte: endDate },
+          $or: [{ 'player1Deck.name': card }, { 'player2Deck.name': card }]
+        }
+      },
+      {
+        // O $facet é utilizado para realizar multiplas operações de agregação
+        $facet: {
+          // Conta todas as batalhas em que a carta foi usada
+          totalBattles: [
+            {
+              $count: 'total'
+            }
+          ],
+          // Filtra todas as vezes em que a carta foi utilizada por um deck vitorioso
+          wins: [
+            {
+              $match: {
+                $or: [
+                  { winner: 'player1', 'player1Deck.name': card },
+                  { winner: 'player2', 'player2Deck.name': card }
+                ]
+              }
+            },
+            {
+              $count: 'wins' // Conta as vitórias onde a carta foi usada pelo vencedor
+            }
+          ]
+        }
+      },
+      {
+        $project: {
+          totalBattles: { $arrayElemAt: ['$totalBattles.total', 0] }, // Extrai o número total de batalhas
+          wins: { $arrayElemAt: ['$wins.wins', 0] } // Extrai o número de vitórias
+        }
+      },
+      {
+        $project: {
+          totalBattles: 1,
+          wins: 1,
+          losses: { $subtract: ['$totalBattles', '$wins'] }, // Calcula derrotas
+          winPercentage: {
+            $cond: {
+              if: { $eq: ['$totalBattles', 0] },
+              then: 0,
+              else: {
+                $multiply: [{ $divide: ['$wins', '$totalBattles'] }, 100]
+              }
+            }
+          },
+          lossPercentage: {
+            $cond: {
+              if: { $eq: ['$totalBattles', 0] },
+              then: 0,
+              else: {
+                $multiply: [
+                  {
+                    $divide: [
+                      { $subtract: ['$totalBattles', '$wins'] },
+                      '$totalBattles'
+                    ]
+                  },
+                  100
+                ]
+              }
+            }
+          }
+        }
+      }
+    ]);
 
-    if (totalBattles === 0) {
-      return res.status(404).json({
-        message:
-          'Nenhuma batalha encontrada com essa carta no intervalo de tempo especificado.'
-      });
-    }
-
-    // Contar as vitórias onde a carta estava no deck do vencedor
-    const wins = await Battle.countDocuments({
-      battleTime: { $gte: startDate, $lte: endDate },
-      $or: [
-        { winner: 'player1', 'player1Deck.name': card }, // Verifica se player1 venceu e usou a carta
-        { winner: 'player2', 'player2Deck.name': card } // Verifica se player2 venceu e usou a carta
-      ]
-    });
-
-    // Contar as derrotas (total de batalhas menos as vitórias)
-    const losses = totalBattles - wins;
-
-    // Calcular as porcentagens
-    const winPercentage = (wins / totalBattles) * 100;
-    const lossPercentage = (losses / totalBattles) * 100;
-
-    const cardImage = await findCardImage(card);
+    const imageURL = await findCardImage(card);
 
     // Enviar os resultados
     res.json({
-      card,
-      cardImage,
-      totalBattles,
-      wins,
-      losses,
-      winPercentage,
-      lossPercentage
+      name: card,
+      imageURL,
+      ...result[0]
     });
   } catch (err) {
     res.status(500).json({ message: `Erro ao calcular porcentagens: ${err}` });
@@ -157,7 +195,6 @@ router.get('/decks-win-percentage', async (req, res) => {
       {
         // Calcula a porcentagem de vitórias para cada deck
         $project: {
-          deck: '$_id',
           details: {
             $reduce: {
               input: '$details',
@@ -175,27 +212,21 @@ router.get('/decks-win-percentage', async (req, res) => {
       {
         // Substitui a lista de nomes dos cards por um array de objetos contendo nome e imagem
         $project: {
-          resultDeck: {
-            $map: {
-              input: '$details',
-              as: 'card',
-              in: {
-                name: '$$card.name', // Pega o nome do card
-                imageURL: '$$card.imageURL' // Pega a imagem do card
-              }
-            }
-          },
-          winPercentage: 1,
-          played: 1,
-          won: 1
-        }
-      },
-      {
-        // Obtendo apenas nomes e imagens únicos
-        $project: {
+          // Removendo o _id do resultado final
           _id: 0,
           deck: {
-            $setUnion: '$resultDeck'
+            // Obtendo apenas nomes e imagens únicos
+            $setUnion: {
+              // Fazendo um map para retornar um array de objetos com o nome e a imagem dos cards
+              $map: {
+                input: '$details',
+                as: 'card',
+                in: {
+                  name: '$$card.name', // Pega o nome do card
+                  imageURL: '$$card.imageURL' // Pega a imagem do card
+                }
+              }
+            }
           },
           winPercentage: 1,
           played: 1,
@@ -251,6 +282,7 @@ router.get('/defeats-by-card-combo', async (req, res) => {
     combo.map(async (card) => await findCardImage(card))
   );
 
+  // Salvando o deck com o nome e a imagem dos cards
   const deck = combo.map((card, index) => {
     return {
       name: card,
