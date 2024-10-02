@@ -385,9 +385,9 @@ router.get('/wins-by-card-and-trophies', async (req, res) => {
       }
     ]);
 
-    const cardImage = await findCardImage(card);
+    const imageURL = await findCardImage(card);
 
-    res.json({ card, cardImage, ...result[0] });
+    res.json({ name: card, imageURL, ...result[0] });
   } catch (err) {
     res.status(500).json({ message: `Erro ao calcular vitórias: ${err}` });
   }
