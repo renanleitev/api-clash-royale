@@ -454,14 +454,14 @@ router.get('/combos-wins-percentage', async (req, res) => {
                 $map: {
                   input: '$player1Combo',
                   as: 'card',
-                  in: { name: '$$card.name', image: '$$card.imageURL' }
+                  in: { name: '$$card.name', imageURL: '$$card.imageURL' }
                 }
               }, // Se player1 venceu, usa deck do player1
               {
                 $map: {
                   input: '$player2Combo',
                   as: 'card',
-                  in: { name: '$$card.name', image: '$$card.imageURL' }
+                  in: { name: '$$card.name', imageURL: '$$card.imageURL' }
                 }
               } // Se player2 venceu, usa deck do player2
             ]
